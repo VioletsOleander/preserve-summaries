@@ -15,7 +15,7 @@ pub fn insert_summaries(input: &str, version_to_summary: &HashMap<String, String
                 let version = captures[1].to_string();
                 let summary = version_to_summary
                     .get(&version)
-                    .expect("Orphan version without summary fuond in input.")
+                    .expect("Orphan version without summary found in input.")
                     .trim_end(); // Trim trailing '\n'
 
                 output_lines.push(line);
