@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::fs::File;
 use std::io::{self, Read};
 
+/// Read content from STDIN.
 pub fn read_input() -> Result<String> {
     let mut stdin = io::stdin();
     let mut buf = String::new();
@@ -10,6 +11,7 @@ pub fn read_input() -> Result<String> {
     Ok(buf)
 }
 
+/// Read content from `CHANGELOG.md`.
 pub fn read_file() -> Result<String> {
     let mut f = File::open("CHANGELOG.md").expect("Failed to open CHANGELOG.md");
     let mut buf = String::new();
