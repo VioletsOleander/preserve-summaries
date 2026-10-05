@@ -1,5 +1,7 @@
-use regex::Regex;
 use std::collections::HashMap;
+
+use anyhow::{Context, Result};
+use regex::Regex;
 
 #[derive(Debug)]
 struct SummaryIndex {
@@ -9,10 +11,7 @@ struct SummaryIndex {
 
 impl SummaryIndex {
     pub fn new(range: (usize, usize), version: String) -> Self {
-        SummaryIndex {
-            range: range,
-            version: version,
-        }
+        SummaryIndex { range, version }
     }
 }
 
@@ -28,16 +27,14 @@ impl SummaryIndex {
 /// ### Other subheaders
 /// ```
 /// The extraction should work.
-pub fn extract_summaries(file: &str) -> HashMap<String, String> {
+pub fn extract_summaries(file: &str) -> Result<HashMap<String, String>> {
     // For example: ## [0.5.0] - 2026-02-17
-    let header_regex = Regex::new(r"^## \[(\d+\.\d+\.\d+)\] - (\d{4}-\d{2}-\d{2})$")
-        .expect("Failed to parse regex.");
+    let header_regex = Regex::new(r"^## \[(\d+\.\d+\.\d+)\] - (\d{4}-\d{2}-\d{2})$")?;
     // For example: ### Feature
-    let subheader_regex = Regex::new(r"^### ([A-Z][a-z]+)").expect("Failed to parse regex.");
+    let subheader_regex = Regex::new(r"^### ([A-Z][a-z]+)")?;
 
-    let lines: Vec<&str> = file.lines().collect();
-    let mut version_to_summary: HashMap<String, String> = HashMap::new();
-    let mut summary_indices: Vec<SummaryIndex> = Vec::new();
+    let lines: Vec<_> = file.lines().collect();
+    let mut summary_indices = Vec::new();
 
     for (idx, line) in lines.iter().enumerate() {
         match header_regex.captures(line) {
@@ -50,7 +47,7 @@ pub fn extract_summaries(file: &str) -> HashMap<String, String> {
                     let subheader = captures[1].to_string();
                     let current_index = summary_indices
                         .last_mut()
-                        .expect("Wrong structure of CHANGELOG.md: orphan subheader found.");
+                        .context("found orphan subheader in CHANGELOG.md")?;
 
                     if subheader == "Summary" {
                         // Start index
@@ -68,6 +65,8 @@ pub fn extract_summaries(file: &str) -> HashMap<String, String> {
         }
     }
 
+    let mut version_to_summary = HashMap::new();
+
     for summary_index in summary_indices {
         let version = summary_index.version;
         let range = summary_index.range;
@@ -77,5 +76,5 @@ pub fn extract_summaries(file: &str) -> HashMap<String, String> {
         version_to_summary.insert(version, summary);
     }
 
-    version_to_summary
+    Ok(version_to_summary)
 }
